@@ -1,0 +1,32 @@
+<h2>{{ id() ? 'Edit Location' : 'New Location' }}</h2>
+
+<form (ngSubmit)="save()" #form="ngForm">
+  <label>
+    Name
+    <input type="text" name="name" [(ngModel)]="model.name" required />
+  </label>
+
+  <label>
+    Type
+    <select name="type" [(ngModel)]="model.type">
+      @for (type of locationTypes; track type) {
+        <option [value]="type">{{ type }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Address
+    <input type="text" name="address" [(ngModel)]="model.address" />
+  </label>
+
+  <label>
+    Notes
+    <textarea name="notes" [(ngModel)]="model.notes"></textarea>
+  </label>
+
+  <div class="form-actions">
+    <button type="submit" [disabled]="form.invalid">Save</button>
+    <a routerLink="/locations">Cancel</a>
+  </div>
+</form>

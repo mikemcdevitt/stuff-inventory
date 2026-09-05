@@ -1,0 +1,61 @@
+<div class="list-header">
+  <h2>Items</h2>
+  <a routerLink="/items/new" class="btn">+ New Item</a>
+</div>
+
+<div class="filters">
+  <input
+    type="search"
+    placeholder="Search name, brand, model, serial..."
+    [(ngModel)]="q"
+    (ngModelChange)="refresh()"
+  />
+
+  <select [(ngModel)]="locationFilter" (ngModelChange)="refresh()">
+    <option value="">All locations</option>
+    @for (location of locations(); track location._id) {
+      <option [value]="location._id">{{ location.name }}</option>
+    }
+  </select>
+
+  <select [(ngModel)]="categoryFilter" (ngModelChange)="refresh()">
+    <option value="">All categories</option>
+    @for (category of categories; track category) {
+      <option [value]="category">{{ category }}</option>
+    }
+  </select>
+</div>
+
+@if (items().length === 0) {
+  <p class="empty">No items found.</p>
+} @else {
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Location</th>
+        <th>Brand</th>
+        <th>Model #</th>
+        <th>Serial #</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of items(); track item._id) {
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>{{ item.category }}</td>
+          <td>{{ locationName(item) }}</td>
+          <td>{{ item.brand }}</td>
+          <td>{{ item.modelNumber }}</td>
+          <td>{{ item.serialNumber }}</td>
+          <td class="actions">
+            <a [routerLink]="['/items', item._id, 'edit']">Edit</a>
+            <button type="button" (click)="remove(item)">Delete</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}

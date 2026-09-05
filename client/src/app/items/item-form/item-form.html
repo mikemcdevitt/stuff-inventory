@@ -1,0 +1,72 @@
+<h2>{{ id() ? 'Edit Item' : 'New Item' }}</h2>
+
+<form (ngSubmit)="save()" #form="ngForm">
+  <label>
+    Name
+    <input type="text" name="name" [(ngModel)]="model.name" required />
+  </label>
+
+  <label>
+    Category
+    <select name="category" [(ngModel)]="model.category">
+      @for (category of categories; track category) {
+        <option [value]="category">{{ category }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Location
+    <select name="location" [(ngModel)]="model.location" required>
+      <option value="" disabled>Select a location</option>
+      @for (location of locations(); track location._id) {
+        <option [value]="location._id">{{ location.name }}</option>
+      }
+    </select>
+  </label>
+
+  <label>
+    Brand
+    <input type="text" name="brand" [(ngModel)]="model.brand" />
+  </label>
+
+  <label>
+    Model #
+    <input type="text" name="modelNumber" [(ngModel)]="model.modelNumber" />
+  </label>
+
+  <label>
+    Serial #
+    <input type="text" name="serialNumber" [(ngModel)]="model.serialNumber" />
+  </label>
+
+  <label>
+    Purchase Date
+    <input type="date" name="purchaseDate" [(ngModel)]="model.purchaseDate" />
+  </label>
+
+  <label>
+    Purchase Price
+    <input type="number" name="purchasePrice" [(ngModel)]="model.purchasePrice" />
+  </label>
+
+  <label>
+    Purchased From
+    <input type="text" name="purchasedFrom" [(ngModel)]="model.purchasedFrom" />
+  </label>
+
+  <label>
+    Warranty Expiration
+    <input type="date" name="warrantyExpiration" [(ngModel)]="model.warrantyExpiration" />
+  </label>
+
+  <label>
+    Notes
+    <textarea name="notes" [(ngModel)]="model.notes"></textarea>
+  </label>
+
+  <div class="form-actions">
+    <button type="submit" [disabled]="form.invalid">Save</button>
+    <a routerLink="/items">Cancel</a>
+  </div>
+</form>

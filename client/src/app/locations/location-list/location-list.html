@@ -1,0 +1,32 @@
+<div class="list-header">
+  <h2>Locations</h2>
+  <a routerLink="/locations/new" class="btn">+ New Location</a>
+</div>
+
+@if (locations().length === 0) {
+  <p class="empty">No locations yet.</p>
+} @else {
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Address</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (location of locations(); track location._id) {
+        <tr>
+          <td>{{ location.name }}</td>
+          <td>{{ location.type }}</td>
+          <td>{{ location.address }}</td>
+          <td class="actions">
+            <a [routerLink]="['/locations', location._id, 'edit']">Edit</a>
+            <button type="button" (click)="remove(location)">Delete</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
