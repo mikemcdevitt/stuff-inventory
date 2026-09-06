@@ -13,6 +13,7 @@ exports.list = async (req, res) => {
 
 exports.create = async (req, res) => {
   const item = await Item.create(req.body);
+  await item.populate('location');
   res.status(201).json(item);
 };
 
