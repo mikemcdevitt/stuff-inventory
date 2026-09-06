@@ -7,7 +7,7 @@ Working backlog, grouped so each group is roughly one commit (or a short related
 - [x] **Item detail page**
   - Route/component to view a single item (all fields, not just the list columns)
   - Link from the item list row to the detail page
-- [ ] **Attachment upload UI**
+- [x] **Attachment upload UI**
   - File input on the item detail page (manual/photo/receipt), wired to the existing `POST /api/items/:id/attachments`
   - List existing attachments on the detail page with a delete action (`DELETE /api/items/:id/attachments/:attachmentId` already exists)
 - [ ] **Dashboard / home view**
