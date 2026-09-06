@@ -2,7 +2,7 @@ import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Item } from '../models/item.model';
+import { Attachment, Item } from '../models/item.model';
 
 export interface ItemFilter {
   location?: string;
@@ -37,5 +37,16 @@ export class ItemService {
 
   remove(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  addAttachment(id: string, file: File, kind: Attachment['kind']): Observable<Item> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('kind', kind);
+    return this.http.post<Item>(`${this.baseUrl}/${id}/attachments`, formData);
+  }
+
+  removeAttachment(id: string, attachmentId: string): Observable<Item> {
+    return this.http.delete<Item>(`${this.baseUrl}/${id}/attachments/${attachmentId}`);
   }
 }

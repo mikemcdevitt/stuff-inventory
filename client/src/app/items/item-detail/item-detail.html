@@ -50,9 +50,25 @@
             {{ attachment.originalName || attachment.url }}
           </a>
           <span class="kind">({{ attachment.kind }})</span>
+          <button type="button" (click)="removeAttachment(attachment._id!)">Delete</button>
         </li>
       }
     </ul>
+  }
+
+  <form class="upload-form" (ngSubmit)="upload()" #uploadForm="ngForm">
+    <select name="kind" [(ngModel)]="selectedKind">
+      @for (kind of attachmentKinds; track kind) {
+        <option [value]="kind">{{ kind }}</option>
+      }
+    </select>
+    <input type="file" (change)="onFileSelected($event)" />
+    <button type="submit" [disabled]="!selectedFile || uploading()">
+      {{ uploading() ? 'Uploading...' : 'Upload' }}
+    </button>
+  </form>
+  @if (uploadError()) {
+    <p class="error">{{ uploadError() }}</p>
   }
 
   <p><a routerLink="/items">&larr; Back to items</a></p>

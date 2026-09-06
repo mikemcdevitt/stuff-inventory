@@ -48,6 +48,7 @@ exports.addAttachment = async (req, res) => {
     originalName: req.file.originalname,
   });
   await item.save();
+  await item.populate('location');
   res.status(201).json(item);
 };
 
@@ -57,5 +58,6 @@ exports.removeAttachment = async (req, res) => {
 
   item.attachments.id(req.params.attachmentId)?.deleteOne();
   await item.save();
+  await item.populate('location');
   res.json(item);
 };
