@@ -1,0 +1,61 @@
+@if (item(); as item) {
+  <div class="detail-header">
+    <h2>{{ item.name }}</h2>
+    <div class="actions">
+      <a [routerLink]="['/items', item._id, 'edit']">Edit</a>
+      <button type="button" (click)="remove()">Delete</button>
+    </div>
+  </div>
+
+  <dl>
+    <dt>Category</dt>
+    <dd>{{ item.category }}</dd>
+
+    <dt>Location</dt>
+    <dd>{{ locationName(item) }}</dd>
+
+    <dt>Brand</dt>
+    <dd>{{ item.brand || '—' }}</dd>
+
+    <dt>Model #</dt>
+    <dd>{{ item.modelNumber || '—' }}</dd>
+
+    <dt>Serial #</dt>
+    <dd>{{ item.serialNumber || '—' }}</dd>
+
+    <dt>Purchase Date</dt>
+    <dd>{{ item.purchaseDate || '—' }}</dd>
+
+    <dt>Purchase Price</dt>
+    <dd>{{ item.purchasePrice != null ? ('$' + item.purchasePrice) : '—' }}</dd>
+
+    <dt>Purchased From</dt>
+    <dd>{{ item.purchasedFrom || '—' }}</dd>
+
+    <dt>Warranty Expiration</dt>
+    <dd>{{ item.warrantyExpiration || '—' }}</dd>
+
+    <dt>Notes</dt>
+    <dd>{{ item.notes || '—' }}</dd>
+  </dl>
+
+  <h3>Attachments</h3>
+  @if (!item.attachments?.length) {
+    <p class="empty">No manuals, photos, or receipts attached yet.</p>
+  } @else {
+    <ul class="attachments">
+      @for (attachment of item.attachments; track attachment._id) {
+        <li>
+          <a [href]="attachment.url" target="_blank" rel="noopener">
+            {{ attachment.originalName || attachment.url }}
+          </a>
+          <span class="kind">({{ attachment.kind }})</span>
+        </li>
+      }
+    </ul>
+  }
+
+  <p><a routerLink="/items">&larr; Back to items</a></p>
+} @else {
+  <p>Loading...</p>
+}

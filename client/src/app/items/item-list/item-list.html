@@ -44,7 +44,7 @@
     <tbody>
       @for (item of items(); track item._id) {
         <tr>
-          <td>{{ item.name }}</td>
+          <td><a [routerLink]="['/items', item._id]">{{ item.name }}</a></td>
           <td>{{ item.category }}</td>
           <td>{{ locationName(item) }}</td>
           <td>{{ item.brand }}</td>
