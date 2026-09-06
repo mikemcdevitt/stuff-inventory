@@ -20,11 +20,21 @@ Working backlog, grouped so each group is roughly one commit (or a short related
 
 ## Deployment
 
-- [ ] Stand up MongoDB Atlas cluster (AWS region) and point `MONGODB_URI` at it
-- [ ] Create S3 bucket for attachments, wire up `AWS_*` / `S3_BUCKET_NAME` env vars
-- [ ] Deploy API to Elastic Beanstalk (or a single Fargate service)
-- [ ] Build Angular client and deploy to S3 + CloudFront
-- [ ] Secrets in AWS Secrets Manager / SSM Parameter Store instead of `.env`
+### Dev environment (AWS account 496739947739, us-east-1)
+
+- [x] IAM bootstrap: `aws-elasticbeanstalk-service-role` / `aws-elasticbeanstalk-ec2-role`, scoped `stuff-inventory-deployer` IAM user (EB management + S3 access limited to `stuff-inventory-*` buckets), local `stuff-inventory` CLI profile
+- [x] S3 bucket `stuff-inventory-dev-uploads` for attachments (private, public access blocked; EC2 instance role granted scoped access — no static AWS keys in the app)
+- [ ] MongoDB Atlas dev cluster (M0, us-east-1) — using a database username/password for dev (simpler than IAM auth; see prod note below), `0.0.0.0/0` network access (acceptable for dev only — EB single-instance has no fixed IP)
+- [ ] Deploy API to Elastic Beanstalk (`stuff-inventory` app, `stuff-inventory-dev` environment, single-instance tier)
+- [ ] Build Angular client and deploy to S3 + CloudFront (needed for HTTPS — Google Sign-In requires it on any non-localhost origin)
+- [ ] Add the CloudFront dev URL to the Google OAuth client's Authorized JavaScript origins
+
+### Prod environment (not started)
+
+- [ ] Look into a serverless architecture (Lambda + API Gateway via `serverless-http`, or App Runner) instead of always-on EC2 — avoids idle compute cost, worth it once traffic is real
+- [ ] Use MongoDB Atlas AWS IAM authentication instead of a DB password — ties DB access to the compute's IAM role instead of a stored secret. Needs a purpose-named role (not the generic `aws-elasticbeanstalk-ec2-role` default) so access doesn't leak to unrelated future resources that reuse that default name
+- [ ] Secrets in AWS Secrets Manager / SSM Parameter Store instead of plain env vars
+- [ ] Separate MongoDB Atlas cluster/project from dev (or at minimum a separate database + user) for real data isolation
 
 ## Later / backlog
 
