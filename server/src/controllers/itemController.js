@@ -1,4 +1,5 @@
 const Item = require('../models/Item');
+const { withResolvedAttachmentUrls, withResolvedAttachmentUrlsMany } = require('../utils/attachmentUrl');
 
 exports.list = async (req, res) => {
   const { location, category, q } = req.query;
@@ -8,19 +9,19 @@ exports.list = async (req, res) => {
   if (q) filter.$text = { $search: q };
 
   const items = await Item.find(filter).populate('location').sort('name');
-  res.json(items);
+  res.json(await withResolvedAttachmentUrlsMany(items));
 };
 
 exports.create = async (req, res) => {
   const item = await Item.create(req.body);
   await item.populate('location');
-  res.status(201).json(item);
+  res.status(201).json(await withResolvedAttachmentUrls(item));
 };
 
 exports.get = async (req, res) => {
   const item = await Item.findById(req.params.id).populate('location');
   if (!item) return res.status(404).json({ error: 'Item not found' });
-  res.json(item);
+  res.json(await withResolvedAttachmentUrls(item));
 };
 
 exports.update = async (req, res) => {
@@ -29,7 +30,7 @@ exports.update = async (req, res) => {
     runValidators: true,
   }).populate('location');
   if (!item) return res.status(404).json({ error: 'Item not found' });
-  res.json(item);
+  res.json(await withResolvedAttachmentUrls(item));
 };
 
 exports.remove = async (req, res) => {
@@ -43,14 +44,16 @@ exports.addAttachment = async (req, res) => {
   if (!item) return res.status(404).json({ error: 'Item not found' });
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
+  const isS3 = Boolean(req.file.key);
   item.attachments.push({
     kind: req.body.kind || 'other',
-    url: req.file.location || `/uploads/${req.file.filename}`,
+    storage: isS3 ? 's3' : 'local',
+    key: isS3 ? req.file.key : req.file.filename,
     originalName: req.file.originalname,
   });
   await item.save();
   await item.populate('location');
-  res.status(201).json(item);
+  res.status(201).json(await withResolvedAttachmentUrls(item));
 };
 
 exports.removeAttachment = async (req, res) => {
@@ -60,5 +63,5 @@ exports.removeAttachment = async (req, res) => {
   item.attachments.id(req.params.attachmentId)?.deleteOne();
   await item.save();
   await item.populate('location');
-  res.json(item);
+  res.json(await withResolvedAttachmentUrls(item));
 };

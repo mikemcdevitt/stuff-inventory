@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const attachmentSchema = new mongoose.Schema(
   {
     kind: { type: String, enum: ['manual', 'photo', 'receipt', 'other'], default: 'other' },
-    url: { type: String, required: true },
+    storage: { type: String, enum: ['s3', 'local'], required: true },
+    key: { type: String, required: true },
     originalName: { type: String },
   },
   { _id: true, timestamps: true }

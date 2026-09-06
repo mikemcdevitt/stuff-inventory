@@ -1,17 +1,14 @@
 const path = require('path');
 const multer = require('multer');
-
-const bucket = process.env.S3_BUCKET_NAME;
+const { s3Client, bucket } = require('../utils/s3');
 
 let storage;
 
 if (bucket) {
   const multerS3 = require('multer-s3');
-  const { S3Client } = require('@aws-sdk/client-s3');
-  const s3 = new S3Client({ region: process.env.AWS_REGION });
 
   storage = multerS3({
-    s3,
+    s3: s3Client,
     bucket,
     key: (req, file, cb) => {
       cb(null, `items/${req.params.id}/${Date.now()}-${file.originalname}`);
