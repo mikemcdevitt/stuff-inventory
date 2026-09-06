@@ -141,6 +141,18 @@ The MEAN stack maps cleanly onto a small, low-maintenance AWS setup — no Kuber
 
 Start with Elastic Beanstalk for the API, Atlas for Mongo, and S3 + CloudFront for the built Angular app and file storage; revisit if scale or team size ever demands more.
 
+### Dev environment
+
+Live and verified end-to-end (auth, DB read/write, S3 upload).
+
+- **API**: `http://stuff-inventory-dev.eba-2da8ez7g.us-east-1.elasticbeanstalk.com` — Elastic Beanstalk, app `stuff-inventory`, environment `stuff-inventory-dev`, single-instance tier (no load balancer), Node.js 24 on Amazon Linux 2023
+- **Database**: MongoDB Atlas M0 cluster `stuff-inventory-dev`, database `stuff-inventory-dev-db`, username/password auth
+- **Uploads**: S3 bucket `stuff-inventory-dev-uploads` (private; the EC2 instance role has scoped access, no static AWS keys on the app) — ⚠️ see [TASKS.md](TASKS.md) for a known gap: attachment links currently 403 since presigned URL generation isn't implemented yet
+- **AWS account**: `496739947739` (us-east-1), via a scoped `stuff-inventory-deployer` IAM user (Elastic Beanstalk management + S3 access limited to `stuff-inventory-*` buckets) — local CLI profile name `stuff-inventory`
+- Frontend isn't deployed yet — run the Angular client locally against this API by setting `apiUrl` in `client/src/environments/environment.ts` to the URL above
+
+Prod is a separate, not-yet-started environment — see TASKS.md for the plan (serverless compute, Atlas IAM auth, Secrets Manager).
+
 ## Getting Started
 
 Prerequisites: Node.js, a local MongoDB (`brew install mongodb-community` on macOS, then `brew services start mongodb-community`).
