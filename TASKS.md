@@ -4,7 +4,7 @@ Working backlog, grouped so each group is roughly one commit (or a short related
 
 ## Next up
 
-- [ ] **Item detail page**
+- [x] **Item detail page**
   - Route/component to view a single item (all fields, not just the list columns)
   - Link from the item list row to the detail page
 - [ ] **Attachment upload UI**
