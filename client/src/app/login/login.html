@@ -1,0 +1,10 @@
+<div class="login-page">
+  <h2>Stuff Inventory</h2>
+  <p>Sign in with an authorized Google account to continue.</p>
+
+  <div #googleButton></div>
+
+  @if (auth.loginError()) {
+    <p class="error">{{ auth.loginError() }}</p>
+  }
+</div>

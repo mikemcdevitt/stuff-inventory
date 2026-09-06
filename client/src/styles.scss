@@ -176,3 +176,47 @@ dl {
     color: #777;
   }
 }
+
+.login-page {
+  max-width: 360px;
+  margin: 4rem auto 0;
+  text-align: center;
+
+  p {
+    color: #777;
+    margin-bottom: 1.5rem;
+  }
+
+  > div {
+    display: flex;
+    justify-content: center;
+  }
+
+  .error {
+    margin-top: 1rem;
+  }
+}
+
+.user-menu {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: #777;
+
+  img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+  }
+
+  button {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    color: inherit;
+  }
+}

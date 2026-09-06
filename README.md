@@ -23,7 +23,7 @@ Stuff Inventory is a simple system of record for that: **Locations** contain **I
 Supporting choices:
 - **Mongoose** for schema/validation on top of MongoDB
 - **Multer + Amazon S3** for photo/manual file uploads — the API streams uploads to an S3 bucket rather than local disk (local disk doesn't survive redeploys/scaling on most hosting). Can move to presigned client-to-S3 uploads later if uploads need to scale past what proxying through the API comfortably handles.
-- Auth: single-user or small-household to start — a simple login is enough; can grow into multi-user with shared/shared-household access later
+- **Auth: Google OAuth** — sign in with Google (via Google Identity Services), gated by an allowlist of authorized email addresses (`ALLOWED_EMAILS`). No passwords to manage. Good enough for a single user or small household; can grow into per-user data with real accounts later.
 
 ## Core Concepts
 
@@ -95,7 +95,12 @@ DELETE /api/items/:id
 
 POST   /api/items/:id/attachments  (manual/photo upload)
 DELETE /api/items/:id/attachments/:attachmentId
+
+POST   /api/auth/google  (body: { credential }, a Google ID token) → { token, user }
+GET    /api/auth/me      (requires Authorization: Bearer <token>)
 ```
+
+`/api/locations` and `/api/items` require `Authorization: Bearer <token>` — get a token by signing in with Google on the client, which exchanges the Google ID token for one of ours.
 
 ## Project Structure
 
@@ -112,9 +117,11 @@ stuff-inventory/
 ├── client/                 # Angular SPA
 │   ├── src/
 │   │   ├── app/
+│   │   │   ├── core/        # models, services, guards, interceptors
+│   │   │   ├── dashboard/
+│   │   │   ├── login/
 │   │   │   ├── locations/
-│   │   │   ├── items/
-│   │   │   └── shared/
+│   │   │   └── items/
 │   │   └── ...
 │   └── package.json
 └── README.md
@@ -138,10 +145,20 @@ Start with Elastic Beanstalk for the API, Atlas for Mongo, and S3 + CloudFront f
 
 Prerequisites: Node.js, a local MongoDB (`brew install mongodb-community` on macOS, then `brew services start mongodb-community`).
 
+### Google OAuth setup (one-time)
+
+1. In the [Google Cloud Console](https://console.cloud.google.com/apis/credentials), create (or pick) a project, then create an **OAuth client ID** of type **Web application**.
+2. Under **Authorized JavaScript origins**, add `http://localhost:4200` (and your production domain later). No redirect URI is needed — sign-in happens client-side via Google Identity Services.
+3. Copy the generated **Client ID** (looks like `xxxx.apps.googleusercontent.com`):
+   - Paste it into `server/.env` as `GOOGLE_CLIENT_ID`
+   - Paste it into `client/src/environments/environment.ts` as `googleClientId`
+4. Set `JWT_SECRET` in `server/.env` to a random string (e.g. `openssl rand -hex 32`) — this signs the app's own session tokens after Google verifies who you are.
+5. Set `ALLOWED_EMAILS` in `server/.env` to a comma-separated list of the Google account email(s) allowed to sign in.
+
 ```bash
 # API server
 cd server
-cp .env.example .env
+cp .env.example .env   # then fill in GOOGLE_CLIENT_ID, JWT_SECRET, ALLOWED_EMAILS
 npm install
 npm run dev          # http://localhost:3000
 
@@ -155,4 +172,4 @@ File uploads fall back to local disk (`server/uploads/`) in dev when `S3_BUCKET_
 
 ## Status
 
-Scaffolded and verified end-to-end: Express + Mongoose API (Location/Item models, REST routes, S3-or-local-disk file uploads) and an Angular client (standalone components, Locations and Items list/create/edit views, cross-field search and filtering). Not yet built: attachment upload UI, warranty reminders, auth, and the other items under Future Enhancements.
+Scaffolded and verified end-to-end: Express + Mongoose API (Location/Item models, REST routes, S3-or-local-disk file uploads, Google OAuth), an Angular client (standalone components, Locations/Items list/detail/create/edit views, attachment upload UI, dashboard, cross-field search and filtering, Google sign-in), all protected behind an email-allowlisted login. Not yet built: warranty reminders and the other items under Future Enhancements, and production deployment.
