@@ -13,9 +13,10 @@ Working backlog, grouped so each group is roughly one commit (or a short related
 - [x] **Dashboard / home view**
   - Counts of items per location and per category
   - Quick links to items missing a model number or serial number
-- [ ] **Basic auth**
-  - Single-user login (household-shared credentials are fine for v1)
+- [x] **Basic auth**
+  - Google OAuth sign-in, gated by an `ALLOWED_EMAILS` allowlist (see README)
   - Protect the API routes and the Angular routes behind it
+  - **Still needed before this actually works**: create a Google OAuth client ID (see README's "Google OAuth setup") and set `GOOGLE_CLIENT_ID` / `JWT_SECRET` / `ALLOWED_EMAILS` in `server/.env`, plus `googleClientId` in `client/src/environments/environment.ts`
 
 ## Deployment
 
