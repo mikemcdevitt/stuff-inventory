@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ItemService } from '../../core/services/item';
 import { LocationService } from '../../core/services/location';
@@ -15,6 +15,7 @@ import { Location } from '../../core/models/location.model';
 export class ItemList {
   private itemService = inject(ItemService);
   private locationService = inject(LocationService);
+  private route = inject(ActivatedRoute);
 
   categories: ItemCategory[] = [
     'appliance',
@@ -34,6 +35,9 @@ export class ItemList {
   categoryFilter = '';
 
   constructor() {
+    this.locationFilter = this.route.snapshot.queryParamMap.get('location') ?? '';
+    this.categoryFilter = this.route.snapshot.queryParamMap.get('category') ?? '';
+
     this.locationService.list().subscribe((locations) => this.locations.set(locations));
     this.refresh();
   }

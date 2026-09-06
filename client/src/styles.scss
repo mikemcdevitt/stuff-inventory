@@ -146,3 +146,33 @@ dl {
 .error {
   color: #d32f2f;
 }
+
+.total {
+  color: #777;
+  margin-top: -0.5rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.count-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .count {
+    color: #777;
+  }
+}

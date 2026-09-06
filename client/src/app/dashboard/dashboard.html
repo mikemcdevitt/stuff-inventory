@@ -1,0 +1,52 @@
+<h2>Dashboard</h2>
+
+<p class="total">{{ totalItems() }} item{{ totalItems() === 1 ? '' : 's' }} tracked</p>
+
+<div class="dashboard-grid">
+  <section>
+    <h3>By Location</h3>
+    @if (byLocation().length === 0) {
+      <p class="empty">No locations yet.</p>
+    } @else {
+      <ul class="count-list">
+        @for (row of byLocation(); track row.label) {
+          <li>
+            <a routerLink="/items" [queryParams]="row.queryParams">{{ row.label }}</a>
+            <span class="count">{{ row.count }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section>
+    <h3>By Category</h3>
+    @if (byCategory().length === 0) {
+      <p class="empty">No items yet.</p>
+    } @else {
+      <ul class="count-list">
+        @for (row of byCategory(); track row.label) {
+          <li>
+            <a routerLink="/items" [queryParams]="row.queryParams">{{ row.label }}</a>
+            <span class="count">{{ row.count }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>
+
+<section>
+  <h3>Missing Model # or Serial #</h3>
+  @if (incompleteItems().length === 0) {
+    <p class="empty">Every item has both a model number and a serial number.</p>
+  } @else {
+    <ul class="count-list">
+      @for (item of incompleteItems(); track item._id) {
+        <li>
+          <a [routerLink]="['/items', item._id]">{{ item.name }}</a>
+        </li>
+      }
+    </ul>
+  }
+</section>
