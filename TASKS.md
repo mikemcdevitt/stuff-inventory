@@ -10,7 +10,7 @@ Working backlog, grouped so each group is roughly one commit (or a short related
 - [x] **Attachment upload UI**
   - File input on the item detail page (manual/photo/receipt), wired to the existing `POST /api/items/:id/attachments`
   - List existing attachments on the detail page with a delete action (`DELETE /api/items/:id/attachments/:attachmentId` already exists)
-- [ ] **Dashboard / home view**
+- [x] **Dashboard / home view**
   - Counts of items per location and per category
   - Quick links to items missing a model number or serial number
 - [ ] **Basic auth**
