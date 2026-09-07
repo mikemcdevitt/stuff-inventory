@@ -143,13 +143,16 @@ Start with Elastic Beanstalk for the API, Atlas for Mongo, and S3 + CloudFront f
 
 ### Dev environment
 
-Live and verified end-to-end (auth, DB read/write, S3 upload).
+Live and verified end-to-end (Google sign-in, DB read/write, S3 upload, SPA routing).
 
-- **API**: `http://stuff-inventory-dev.eba-2da8ez7g.us-east-1.elasticbeanstalk.com` — Elastic Beanstalk, app `stuff-inventory`, environment `stuff-inventory-dev`, single-instance tier (no load balancer), Node.js 24 on Amazon Linux 2023
+- **App**: `https://d3bguqe7gjdkvc.cloudfront.net` — one CloudFront distribution serves everything:
+  - Default behavior → S3 bucket `stuff-inventory-dev-web` (private, read via Origin Access Control) serving the built Angular app. A CloudFront Function rewrites extensionless paths to `/index.html` so client-side routes (e.g. `/items`) work on refresh/deep-link.
+  - `/api/*` behavior → the Elastic Beanstalk API origin (`CachingDisabled` + `AllViewerExceptHostHeader` origin request policy, so the `Authorization` header reaches the API). Frontend and API are same-origin, so there's no CORS to configure.
+- **API origin**: `http://stuff-inventory-dev.eba-2da8ez7g.us-east-1.elasticbeanstalk.com` — Elastic Beanstalk, app `stuff-inventory`, environment `stuff-inventory-dev`, single-instance tier (no load balancer), Node.js 24 on Amazon Linux 2023. Plain HTTP is fine since only CloudFront talks to it directly; browsers only ever see the HTTPS CloudFront domain.
 - **Database**: MongoDB Atlas M0 cluster `stuff-inventory-dev`, database `stuff-inventory-dev-db`, username/password auth
-- **Uploads**: S3 bucket `stuff-inventory-dev-uploads` (private; the EC2 instance role has scoped access, no static AWS keys on the app) — ⚠️ see [TASKS.md](TASKS.md) for a known gap: attachment links currently 403 since presigned URL generation isn't implemented yet
-- **AWS account**: `496739947739` (us-east-1), via a scoped `stuff-inventory-deployer` IAM user (Elastic Beanstalk management + S3 access limited to `stuff-inventory-*` buckets) — local CLI profile name `stuff-inventory`
-- Frontend isn't deployed yet — run the Angular client locally against this API by setting `apiUrl` in `client/src/environments/environment.ts` to the URL above
+- **Uploads**: S3 bucket `stuff-inventory-dev-uploads` (private; the EC2 instance role has scoped access, no static AWS keys on the app). `attachment.url` is a 1-hour presigned URL generated fresh on every read.
+- **AWS account**: `496739947739` (us-east-1), via a scoped `stuff-inventory-deployer` IAM user (Elastic Beanstalk + CloudFront management, S3 access limited to `stuff-inventory-*` buckets) — local CLI profile name `stuff-inventory`
+- **Redeploying the frontend**: `cd client && ng build --configuration production`, then `aws s3 sync dist/client/browser/ s3://stuff-inventory-dev-web/ --delete --profile stuff-inventory`. See TASKS.md for a cache-invalidation gotcha on `index.html`.
 
 Prod is a separate, not-yet-started environment — see TASKS.md for the plan (serverless compute, Atlas IAM auth, Secrets Manager).
 
