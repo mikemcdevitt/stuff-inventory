@@ -38,6 +38,7 @@ Working backlog, grouped so each group is roughly one commit (or a short related
 - [ ] Use MongoDB Atlas AWS IAM authentication instead of a DB password — ties DB access to the compute's IAM role instead of a stored secret. Needs a purpose-named role (not the generic `aws-elasticbeanstalk-ec2-role` default) so access doesn't leak to unrelated future resources that reuse that default name
 - [ ] Secrets in AWS Secrets Manager / SSM Parameter Store instead of plain env vars
 - [ ] Separate MongoDB Atlas cluster/project from dev (or at minimum a separate database + user) for real data isolation
+- [ ] Custom domain on Route 53: register/host the domain there, request an ACM cert in **us-east-1** (required region for CloudFront regardless of where else things live), validate via DNS, add it as an Alternate Domain Name on the prod CloudFront distribution, point a Route 53 ALIAS record at it, and add the new origin to the Google OAuth client's Authorized JavaScript origins. Dev stays on its plain `*.cloudfront.net` URL.
 
 ## Later / backlog
 
