@@ -143,7 +143,7 @@ Start with Elastic Beanstalk for the API, Atlas for Mongo, and S3 + CloudFront f
 
 ### Dev environment
 
-Live and verified end-to-end (Google sign-in, DB read/write, S3 upload, SPA routing).
+Live and verified end-to-end with a real Google account, including that a non-allowlisted account is correctly rejected — plus DB read/write, S3 upload, and SPA routing.
 
 - **App**: `https://d3bguqe7gjdkvc.cloudfront.net` — one CloudFront distribution serves everything:
   - Default behavior → S3 bucket `stuff-inventory-dev-web` (private, read via Origin Access Control) serving the built Angular app. A CloudFront Function rewrites extensionless paths to `/index.html` so client-side routes (e.g. `/items`) work on refresh/deep-link.
