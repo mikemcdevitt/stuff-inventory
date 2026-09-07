@@ -153,6 +153,7 @@ Live and verified end-to-end with a real Google account, including that a non-al
 - **Uploads**: S3 bucket `stuff-inventory-dev-uploads` (private; the EC2 instance role has scoped access, no static AWS keys on the app). `attachment.url` is a 1-hour presigned URL generated fresh on every read.
 - **AWS account**: `496739947739` (us-east-1), via a scoped `stuff-inventory-deployer` IAM user (Elastic Beanstalk + CloudFront management, S3 access limited to `stuff-inventory-*` buckets) — local CLI profile name `stuff-inventory`
 - **Redeploying the frontend**: `cd client && ng build --configuration production`, then `aws s3 sync dist/client/browser/ s3://stuff-inventory-dev-web/ --delete --profile stuff-inventory`. See TASKS.md for a cache-invalidation gotcha on `index.html`.
+- **Shutting down / bringing back up**: only the Elastic Beanstalk instance costs anything meaningful (~$7–8/mo running 24/7) — see [deploy/README.md](deploy/README.md) for the exact commands to terminate it when not in use and bring it back later.
 
 Prod is a separate, not-yet-started environment — see TASKS.md for the plan (serverless compute, Atlas IAM auth, Secrets Manager).
 

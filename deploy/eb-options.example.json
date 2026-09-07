@@ -1,0 +1,13 @@
+[
+  {"Namespace": "aws:autoscaling:launchconfiguration", "OptionName": "IamInstanceProfile", "Value": "aws-elasticbeanstalk-ec2-role"},
+  {"Namespace": "aws:autoscaling:launchconfiguration", "OptionName": "InstanceType", "Value": "t3.micro"},
+  {"Namespace": "aws:elasticbeanstalk:environment", "OptionName": "ServiceRole", "Value": "aws-elasticbeanstalk-service-role"},
+  {"Namespace": "aws:elasticbeanstalk:environment", "OptionName": "EnvironmentType", "Value": "SingleInstance"},
+  {"Namespace": "aws:elasticbeanstalk:application:environment", "OptionName": "PORT", "Value": "8080"},
+  {"Namespace": "aws:elasticbeanstalk:application:environment", "OptionName": "MONGODB_URI", "Value": "mongodb+srv://USER:PASSWORD@stuff-inventory-dev.re4wzbn.mongodb.net/stuff-inventory-dev-db?appName=stuff-inventory-dev"},
+  {"Namespace": "aws:elasticbeanstalk:application:environment", "OptionName": "GOOGLE_CLIENT_ID", "Value": "REPLACE_WITH_GOOGLE_CLIENT_ID.apps.googleusercontent.com"},
+  {"Namespace": "aws:elasticbeanstalk:application:environment", "OptionName": "JWT_SECRET", "Value": "REPLACE_WITH_JWT_SECRET"},
+  {"Namespace": "aws:elasticbeanstalk:application:environment", "OptionName": "ALLOWED_EMAILS", "Value": "REPLACE_WITH_ALLOWED_EMAILS"},
+  {"Namespace": "aws:elasticbeanstalk:application:environment", "OptionName": "S3_BUCKET_NAME", "Value": "stuff-inventory-dev-uploads"},
+  {"Namespace": "aws:elasticbeanstalk:application:environment", "OptionName": "AWS_REGION", "Value": "us-east-1"}
+]

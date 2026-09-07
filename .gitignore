@@ -3,5 +3,6 @@ dist/
 server/uploads/
 .env
 .env.local
+deploy/eb-options.json
 *.log
 .DS_Store
