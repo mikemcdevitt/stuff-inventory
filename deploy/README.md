@@ -18,14 +18,7 @@ Takes a couple of minutes to fully tear down (EC2 instance, Auto Scaling group, 
 
 ## Bringing it back up
 
-1. Copy the template and fill in the real secrets (from `server/.env`, or wherever you're keeping them):
-
-   ```bash
-   cp deploy/eb-options.example.json deploy/eb-options.json
-   # edit deploy/eb-options.json: MONGODB_URI, GOOGLE_CLIENT_ID, JWT_SECRET, ALLOWED_EMAILS
-   ```
-
-   `deploy/eb-options.json` is gitignored — never commit it.
+1. Make sure `deploy/eb-options.json` exists and has the real secrets filled in (`MONGODB_URI`, `GOOGLE_CLIENT_ID`, `JWT_SECRET`, `ALLOWED_EMAILS`). If it doesn't exist yet: `cp deploy/eb-options.example.json deploy/eb-options.json` and fill it in. **This file is gitignored and is the durable local record of the deployed dev secrets — `server/.env` normally points at a local MongoDB instead, so don't rely on it for these values.** Keep `deploy/eb-options.json` up to date if any of these values ever change (e.g. rotating `JWT_SECRET`), rather than deleting it after use.
 
 2. Recreate the environment, reusing the most recent application version already sitting in S3 (check `aws elasticbeanstalk describe-application-versions --application-name stuff-inventory` for the current version label — `v2` as of this writing):
 
@@ -45,29 +38,24 @@ Takes a couple of minutes to fully tear down (EC2 instance, Auto Scaling group, 
    until [ "$(aws elasticbeanstalk describe-environments --application-name stuff-inventory --environment-names stuff-inventory-dev --profile stuff-inventory --query 'Environments[0].Status' --output text)" = "Ready" ]; do sleep 15; done
    ```
 
-3. **Important**: Elastic Beanstalk assigns a new random CNAME every time an environment is created — it will *not* be `stuff-inventory-dev.eba-2da8ez7g.us-east-1.elasticbeanstalk.com` again. Get the new one:
+3. Verify — tested 2026-09-07: recreating with the same application/environment name in the same account+region gave back the **exact same CNAME** (`stuff-inventory-dev.eba-2da8ez7g.us-east-1.elasticbeanstalk.com`), so CloudFront's origin needed no changes at all and just worked immediately:
 
    ```bash
    aws elasticbeanstalk describe-environments --application-name stuff-inventory --environment-names stuff-inventory-dev --profile stuff-inventory --query "Environments[0].CNAME" --output text
+   curl https://d3bguqe7gjdkvc.cloudfront.net/api/health
    ```
 
-4. Update the CloudFront distribution's API origin to point at the new CNAME. Get the current distribution config and ETag, edit the `eb-api-origin` origin's `DomainName`, then update:
+   This isn't something AWS documents as a guarantee, so treat the CNAME check above as a cheap sanity check rather than skipping it — **if it ever does come back different**, update the CloudFront origin:
 
    ```bash
    aws cloudfront get-distribution-config --id E3RRU6B2L1FUN6 --profile stuff-inventory > /tmp/cf-config.json
-   # edit /tmp/cf-config.json: replace the eb-api-origin origin's DomainName with the new CNAME from step 3
+   # edit /tmp/cf-config.json: replace the eb-api-origin origin's DomainName with the new CNAME
    # extract the ETag value from the file first, then:
    aws cloudfront update-distribution --id E3RRU6B2L1FUN6 --profile stuff-inventory \
      --distribution-config file:///tmp/cf-config.json --if-match THE_ETAG_FROM_THE_FILE
    ```
 
-   CloudFront takes a few minutes to propagate the change.
-
-5. Verify:
-
-   ```bash
-   curl https://d3bguqe7gjdkvc.cloudfront.net/api/health
-   ```
+   CloudFront takes a few minutes to propagate a distribution config change.
 
 ## One-time setup (already done, for reference only)
 

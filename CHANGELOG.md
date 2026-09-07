@@ -8,8 +8,15 @@ Notable changes to Stuff Inventory. Not tied to version numbers (no releases yet
 - Angular client deployed to S3 + CloudFront (dev). One distribution serves both the static frontend (default behavior, private S3 bucket via Origin Access Control) and the API (`/api/*` behavior, proxied to Elastic Beanstalk) — same origin, so no CORS needed, and it resolves the mixed-content issue an HTTP-only API would cause on an HTTPS page.
 - A CloudFront Function rewrites extensionless paths to `/index.html` for Angular client-side routing, scoped to the default behavior only so it never intercepts real API error responses.
 
+### Added
+- `deploy/README.md` runbook and `deploy/eb-options.example.json` template for shutting down and recreating the dev Elastic Beanstalk environment.
+
 ### Verified
 - Real Google sign-in confirmed end-to-end on the live dev deployment, including that a non-allowlisted account is correctly rejected.
+- Full shutdown/bring-up flow tested for real: terminated the dev environment, confirmed it was actually unreachable, recreated it, and confirmed a full authenticated round trip through CloudFront again. The environment's CNAME came back identical across recreation (not guaranteed by AWS, but observed) — corrected the runbook, which had assumed it would change.
+
+### Fixed
+- Runbook pointed to `server/.env` as the source for the deployed dev secrets; that file actually points at local MongoDB. `deploy/eb-options.json` (gitignored) is the real durable record now.
 
 ## 2026-09-06
 
