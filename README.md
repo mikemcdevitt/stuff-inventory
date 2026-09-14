@@ -52,8 +52,7 @@ A physical thing worth tracking — appliances, bikes, musical instruments, tool
 | purchasePrice | number | optional |
 | purchasedFrom | string | optional, retailer/store |
 | warrantyExpiration | date | optional |
-| manualUrl | string | link to a manufacturer manual page, or an uploaded file |
-| photoUrl | string | optional photo of the item or its label/nameplate |
+| attachments | array | manuals/photos/receipts — each stores `kind`, `storage` ('s3' or 'local'), `key`, `originalName`. `url` is never stored — it's a fresh presigned S3 URL (or local path) resolved on every read, since the uploads bucket is private |
 | tags | string[] | free-form, e.g. ["kitchen", "needs-filter"] |
 | notes | string | free-form |
 | createdAt / updatedAt | date | automatic |
@@ -109,9 +108,10 @@ stuff-inventory/
 ├── server/                 # Express + Mongoose API
 │   ├── src/
 │   │   ├── models/         # Location.js, Item.js
-│   │   ├── routes/         # locations.js, items.js
+│   │   ├── routes/         # locations.js, items.js, auth.js
 │   │   ├── controllers/
 │   │   ├── middleware/     # auth, upload
+│   │   ├── utils/          # s3.js, attachmentUrl.js (presigned URL resolution)
 │   │   └── app.js
 │   └── package.json
 ├── client/                 # Angular SPA
