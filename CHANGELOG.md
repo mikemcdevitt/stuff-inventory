@@ -4,6 +4,9 @@ Notable changes to Stuff Inventory. Not tied to version numbers (no releases yet
 
 ## 2026-09-14
 
+### Added
+- Custom domain for dev: `https://dev-stuff.otherstuff.info`, via Route 53 + an ACM certificate (us-east-1) attached to the CloudFront distribution as an Alternate Domain Name. Both the custom domain and the original `*.cloudfront.net` URL work.
+
 ### Fixed
 - Stale `index.html` on redeploy. Added `deploy/deploy-frontend.sh`, which sets `Cache-Control: public, max-age=31536000, immutable` on hashed JS/CSS and `Cache-Control: no-cache` on `index.html` at upload time — self-enforcing, so no one has to remember a manual CloudFront invalidation after each deploy. Verified for real: a content change to `index.html` appeared through CloudFront within ~2 seconds.
 

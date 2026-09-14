@@ -145,13 +145,14 @@ Start with Elastic Beanstalk for the API, Atlas for Mongo, and S3 + CloudFront f
 
 Live and verified end-to-end with a real Google account, including that a non-allowlisted account is correctly rejected — plus DB read/write, S3 upload, and SPA routing.
 
-- **App**: `https://d3bguqe7gjdkvc.cloudfront.net` — one CloudFront distribution serves everything:
+- **App**: `https://dev-stuff.otherstuff.info` (or the underlying `https://d3bguqe7gjdkvc.cloudfront.net` — both work) — one CloudFront distribution serves everything:
   - Default behavior → S3 bucket `stuff-inventory-dev-web` (private, read via Origin Access Control) serving the built Angular app. A CloudFront Function rewrites extensionless paths to `/index.html` so client-side routes (e.g. `/items`) work on refresh/deep-link.
   - `/api/*` behavior → the Elastic Beanstalk API origin (`CachingDisabled` + `AllViewerExceptHostHeader` origin request policy, so the `Authorization` header reaches the API). Frontend and API are same-origin, so there's no CORS to configure.
 - **API origin**: `http://stuff-inventory-dev.eba-2da8ez7g.us-east-1.elasticbeanstalk.com` — Elastic Beanstalk, app `stuff-inventory`, environment `stuff-inventory-dev`, single-instance tier (no load balancer), Node.js 24 on Amazon Linux 2023. Plain HTTP is fine since only CloudFront talks to it directly; browsers only ever see the HTTPS CloudFront domain.
 - **Database**: MongoDB Atlas M0 cluster `stuff-inventory-dev`, database `stuff-inventory-dev-db`, username/password auth
 - **Uploads**: S3 bucket `stuff-inventory-dev-uploads` (private; the EC2 instance role has scoped access, no static AWS keys on the app). `attachment.url` is a 1-hour presigned URL generated fresh on every read.
-- **AWS account**: `496739947739` (us-east-1), via a scoped `stuff-inventory-deployer` IAM user (Elastic Beanstalk + CloudFront management, S3 access limited to `stuff-inventory-*` buckets) — local CLI profile name `stuff-inventory`
+- **Custom domain**: `dev-stuff.otherstuff.info`, hosted in Route 53 (hosted zone `Z1OJXY7XMX49RI`), with an ACM certificate in us-east-1 attached to the CloudFront distribution as an Alternate Domain Name, and a Route 53 ALIAS record pointing at it.
+- **AWS account**: `496739947739` (us-east-1), via a scoped `stuff-inventory-deployer` IAM user (Elastic Beanstalk + CloudFront + Route 53 [scoped to this one hosted zone] + ACM management, S3 access limited to `stuff-inventory-*` buckets) — local CLI profile name `stuff-inventory`
 - **Redeploying the frontend**: `./deploy/deploy-frontend.sh` — builds and syncs to S3 with per-file `Cache-Control` (long-lived + immutable for hashed JS/CSS, `no-cache` for `index.html`), so changes show up through CloudFront within seconds with no manual invalidation step needed.
 - **Shutting down / bringing back up**: only the Elastic Beanstalk instance costs anything meaningful (~$7–8/mo running 24/7) — see [deploy/README.md](deploy/README.md) for the exact commands to terminate it when not in use and bring it back later.
 
