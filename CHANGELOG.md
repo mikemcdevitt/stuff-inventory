@@ -2,6 +2,11 @@
 
 Notable changes to Stuff Inventory. Not tied to version numbers (no releases yet) — grouped by date instead. See [TASKS.md](TASKS.md) for what's in progress or planned.
 
+## 2026-09-14
+
+### Fixed
+- Stale `index.html` on redeploy. Added `deploy/deploy-frontend.sh`, which sets `Cache-Control: public, max-age=31536000, immutable` on hashed JS/CSS and `Cache-Control: no-cache` on `index.html` at upload time — self-enforcing, so no one has to remember a manual CloudFront invalidation after each deploy. Verified for real: a content change to `index.html` appeared through CloudFront within ~2 seconds.
+
 ## 2026-09-07
 
 ### Added
