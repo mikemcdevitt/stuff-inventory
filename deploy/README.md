@@ -4,59 +4,47 @@ Reference: [README.md's Dev environment section](../README.md#dev-environment) f
 
 All commands use the scoped CLI profile: add `--profile stuff-inventory` (already assumed below).
 
-## What costs money vs. what doesn't
+## Architecture (serverless, migrated 2026-09-29)
 
-Only the Elastic Beanstalk EC2 instance has a meaningful ongoing cost (~$7–8/mo running 24/7). MongoDB Atlas (M0 free tier), the two S3 buckets, and CloudFront are all free or pennies at this project's traffic — there's no reason to ever tear those down. **Only the EB environment is worth shutting down when not in use.**
+- **Frontend**: Angular build in S3 (`stuff-inventory-dev-web`), served through CloudFront
+- **API**: Express app wrapped with `serverless-http`, running on **Lambda** (`stuff-inventory-dev-api`), fronted by an **API Gateway HTTP API**, proxied through the same CloudFront distribution's `/api/*` behavior
+- **Database**: MongoDB Atlas M0
+- **Uploads**: S3, presigned URLs
 
-## Bringing the dev environment down
+Unlike the old Elastic Beanstalk setup, **there's no always-on compute to shut down between uses** — Lambda and API Gateway both scale to zero automatically and cost nothing when idle. The old "terminate the environment when not in use" workflow this runbook used to document no longer applies to anything. (EB is retired; see CHANGELOG.md if you need the old runbook for reference.)
+
+## Redeploying the API
 
 ```bash
-aws elasticbeanstalk terminate-environment --environment-name stuff-inventory-dev --profile stuff-inventory
+./deploy/deploy-api.sh
 ```
 
-Takes a couple of minutes to fully tear down (EC2 instance, Auto Scaling group, security group). The application itself (`stuff-inventory`) and its stored versions in S3 are untouched — only the environment goes away.
+Builds a clean `node_modules` (production deps only — Lambda doesn't run `npm install` for you, unlike EB) in a temp directory, zips it with `server/src`, and calls `aws lambda update-function-code`. Takes well under a minute.
 
-## Bringing it back up
+## Redeploying the frontend
 
-1. Make sure `deploy/eb-options.json` exists and has the real secrets filled in (`MONGODB_URI`, `GOOGLE_CLIENT_ID`, `JWT_SECRET`, `ALLOWED_EMAILS`). If it doesn't exist yet: `cp deploy/eb-options.example.json deploy/eb-options.json` and fill it in. **This file is gitignored and is the durable local record of the deployed dev secrets — `server/.env` normally points at a local MongoDB instead, so don't rely on it for these values.** Keep `deploy/eb-options.json` up to date if any of these values ever change (e.g. rotating `JWT_SECRET`), rather than deleting it after use.
+```bash
+./deploy/deploy-frontend.sh
+```
 
-2. Recreate the environment, reusing the most recent application version already sitting in S3 (check `aws elasticbeanstalk describe-application-versions --application-name stuff-inventory` for the current version label — `v2` as of this writing):
+Unchanged by the serverless migration — still builds the Angular app and syncs to S3 with the right `Cache-Control` headers (see AGENTS.md for why that matters).
 
-   ```bash
-   aws elasticbeanstalk create-environment \
-     --application-name stuff-inventory \
-     --environment-name stuff-inventory-dev \
-     --solution-stack-name "64bit Amazon Linux 2023 v6.11.7 running Node.js 24" \
-     --version-label v2 \
-     --option-settings file://deploy/eb-options.json \
-     --profile stuff-inventory
-   ```
+## Updating environment variables / secrets
 
-   Wait for it to go `Ready`/`Green`:
+```bash
+aws lambda update-function-configuration \
+  --function-name stuff-inventory-dev-api \
+  --environment "Variables={MONGODB_URI='...',GOOGLE_CLIENT_ID='...',JWT_SECRET='...',ALLOWED_EMAILS='...',S3_BUCKET_NAME='stuff-inventory-dev-uploads'}" \
+  --profile stuff-inventory
+```
 
-   ```bash
-   until [ "$(aws elasticbeanstalk describe-environments --application-name stuff-inventory --environment-names stuff-inventory-dev --profile stuff-inventory --query 'Environments[0].Status' --output text)" = "Ready" ]; do sleep 15; done
-   ```
-
-3. Verify — tested 2026-09-07: recreating with the same application/environment name in the same account+region gave back the **exact same CNAME** (`stuff-inventory-dev.eba-2da8ez7g.us-east-1.elasticbeanstalk.com`), so CloudFront's origin needed no changes at all and just worked immediately:
-
-   ```bash
-   aws elasticbeanstalk describe-environments --application-name stuff-inventory --environment-names stuff-inventory-dev --profile stuff-inventory --query "Environments[0].CNAME" --output text
-   curl https://d3bguqe7gjdkvc.cloudfront.net/api/health
-   ```
-
-   This isn't something AWS documents as a guarantee, so treat the CNAME check above as a cheap sanity check rather than skipping it — **if it ever does come back different**, update the CloudFront origin:
-
-   ```bash
-   aws cloudfront get-distribution-config --id E3RRU6B2L1FUN6 --profile stuff-inventory > /tmp/cf-config.json
-   # edit /tmp/cf-config.json: replace the eb-api-origin origin's DomainName with the new CNAME
-   # extract the ETag value from the file first, then:
-   aws cloudfront update-distribution --id E3RRU6B2L1FUN6 --profile stuff-inventory \
-     --distribution-config file:///tmp/cf-config.json --if-match THE_ETAG_FROM_THE_FILE
-   ```
-
-   CloudFront takes a few minutes to propagate a distribution config change.
+**This replaces `update-function-configuration`'s existing `Variables` map wholesale** — always pass all of them, not just the one you're changing, or you'll silently drop the others. There's no local file that mirrors these (unlike the old `deploy/eb-options.json`) — keep them in a password manager or similar if you need a durable record outside AWS itself. `AWS_REGION` is a Lambda-reserved variable name and gets set automatically; never try to set it yourself, the API call will fail.
 
 ## One-time setup (already done, for reference only)
 
-The IAM roles/user, S3 buckets, Origin Access Control, CloudFront Function, and CloudFront distribution itself are all persistent and were created once — see git history around the "Deploy API to Elastic Beanstalk" and "Deploy Angular client to S3 + CloudFront" commits for the exact commands if any of these ever need to be rebuilt from scratch.
+- **IAM**: `stuff-inventory-dev-lambda-role` (trusts `lambda.amazonaws.com`; `AWSLambdaBasicExecutionRole` managed policy + an inline policy scoped to `s3:PutObject`/`GetObject`/`DeleteObject`/`ListBucket` on `stuff-inventory-dev-uploads` only). The `stuff-inventory-deployer` user has `AWSLambda_FullAccess`, `AmazonAPIGatewayAdministrator`, and `iam:PassRole` scoped to this role (plus the still-attached, now-unused EB permissions — see CHANGELOG.md).
+- **Lambda**: `stuff-inventory-dev-api`, Node.js 22.x runtime, handler `src/lambda.handler`, 256MB memory, 30s timeout.
+- **API Gateway**: HTTP API `stuff-inventory-dev-api`, quick-created with a Lambda proxy target — this auto-creates a `$default` route/stage but does **not** grant the Lambda resource-based invoke permission, so `aws lambda add-permission` (principal `apigateway.amazonaws.com`, source ARN `arn:aws:execute-api:us-east-1:496739947739:<api-id>/*/*`) is a required extra step, easy to miss.
+- **CloudFront**: the existing distribution's `/api/*` origin was repointed from the EB CNAME to the API Gateway's `execute-api` domain (`OriginProtocolPolicy: https-only` — API Gateway has no plain-HTTP option, unlike EB). Same `CachingDisabled` + `AllViewerExceptHostHeader` policies as before; no other changes needed since S3 origin, Origin Access Control, the SPA-routing CloudFront Function, custom domain, and ACM cert are all frontend-side and untouched by this migration.
+
+See git history around the "Migrate dev API to Lambda + API Gateway" commit for the exact commands if any of this ever needs rebuilding.

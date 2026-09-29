@@ -112,7 +112,9 @@ stuff-inventory/
 │   │   ├── controllers/
 │   │   ├── middleware/     # auth, upload
 │   │   ├── utils/          # s3.js, attachmentUrl.js (presigned URL resolution)
-│   │   └── app.js
+│   │   ├── app.js          # Express app definition
+│   │   ├── server.js       # local dev entry point (npm run dev)
+│   │   └── lambda.js       # AWS entry point — wraps app.js with serverless-http
 │   └── package.json
 ├── client/                 # Angular SPA
 │   ├── src/
@@ -134,12 +136,12 @@ The MEAN stack maps cleanly onto a small, low-maintenance AWS setup — no Kuber
 | Piece | AWS service |
 |---|---|
 | Angular build (static files) | S3 + CloudFront |
-| Express/Node API | Elastic Beanstalk or a single ECS Fargate service (EC2/Lightsail also fine to start) |
+| Express/Node API | Lambda (via `serverless-http`) behind an API Gateway HTTP API — no idle cost, scales to zero |
 | MongoDB | MongoDB Atlas hosted in an AWS region — simplest, full Mongoose compatibility. (Amazon DocumentDB is an alternative if everything needs to live in one AWS account/VPC, but it's only partially MongoDB-wire-compatible and can trip up newer Mongoose features.) |
-| Manuals/photos | S3 bucket, served via CloudFront or direct S3 URLs |
-| Secrets (DB URI, S3 keys) | AWS Secrets Manager or SSM Parameter Store |
+| Manuals/photos | S3 bucket, served via presigned URLs |
+| Secrets (DB URI, S3 keys) | Lambda environment variables today; AWS Secrets Manager or SSM Parameter Store would be the prod-hardening step |
 
-Start with Elastic Beanstalk for the API, Atlas for Mongo, and S3 + CloudFront for the built Angular app and file storage; revisit if scale or team size ever demands more.
+Originally deployed on Elastic Beanstalk (a single EC2 instance); migrated to Lambda + API Gateway on 2026-09-29 to eliminate the ~$7–8/mo always-on EC2 cost entirely rather than just pausing it between uses. See CHANGELOG.md for the migration notes.
 
 ### Dev environment
 
@@ -147,16 +149,17 @@ Live and verified end-to-end with a real Google account, including that a non-al
 
 - **App**: `https://dev-stuff.otherstuff.info` (or the underlying `https://d3bguqe7gjdkvc.cloudfront.net` — both work) — one CloudFront distribution serves everything:
   - Default behavior → S3 bucket `stuff-inventory-dev-web` (private, read via Origin Access Control) serving the built Angular app. A CloudFront Function rewrites extensionless paths to `/index.html` so client-side routes (e.g. `/items`) work on refresh/deep-link.
-  - `/api/*` behavior → the Elastic Beanstalk API origin (`CachingDisabled` + `AllViewerExceptHostHeader` origin request policy, so the `Authorization` header reaches the API). Frontend and API are same-origin, so there's no CORS to configure.
-- **API origin**: `http://stuff-inventory-dev.eba-2da8ez7g.us-east-1.elasticbeanstalk.com` — Elastic Beanstalk, app `stuff-inventory`, environment `stuff-inventory-dev`, single-instance tier (no load balancer), Node.js 24 on Amazon Linux 2023. Plain HTTP is fine since only CloudFront talks to it directly; browsers only ever see the HTTPS CloudFront domain.
+  - `/api/*` behavior → an API Gateway HTTP API (`CachingDisabled` + `AllViewerExceptHostHeader` origin request policy, so the `Authorization` header reaches the API; `https-only`, since API Gateway has no plain-HTTP option). Frontend and API are same-origin, so there's no CORS to configure.
+- **API**: Lambda function `stuff-inventory-dev-api` (Node.js 22.x, handler `src/lambda.handler`, 256MB/30s), fronted by API Gateway HTTP API `stuff-inventory-dev-api`. The MongoDB connection is cached at module scope (`server/src/lambda.js`) and reused across warm invocations rather than reconnected per-request.
 - **Database**: MongoDB Atlas M0 cluster `stuff-inventory-dev`, database `stuff-inventory-dev-db`, username/password auth
-- **Uploads**: S3 bucket `stuff-inventory-dev-uploads` (private; the EC2 instance role has scoped access, no static AWS keys on the app). `attachment.url` is a 1-hour presigned URL generated fresh on every read.
+- **Uploads**: S3 bucket `stuff-inventory-dev-uploads` (private; the Lambda execution role has scoped access, no static AWS keys on the app). `attachment.url` is a 1-hour presigned URL generated fresh on every read. Upload size capped at 4MB (`server/src/middleware/upload.js`) — API Gateway's Lambda proxy integration hard-caps request bodies at 6MB, and they arrive base64-encoded (~33% larger), so 4MB of real file content stays safely under that.
 - **Custom domain**: `dev-stuff.otherstuff.info`, hosted in Route 53 (hosted zone `Z1OJXY7XMX49RI`), with an ACM certificate in us-east-1 attached to the CloudFront distribution as an Alternate Domain Name, and a Route 53 ALIAS record pointing at it.
-- **AWS account**: `496739947739` (us-east-1), via a scoped `stuff-inventory-deployer` IAM user (Elastic Beanstalk + CloudFront + Route 53 [scoped to this one hosted zone] + ACM management, S3 access limited to `stuff-inventory-*` buckets) — local CLI profile name `stuff-inventory`
+- **AWS account**: `496739947739` (us-east-1), via a scoped `stuff-inventory-deployer` IAM user (Lambda + API Gateway + CloudFront + Route 53 [scoped to this one hosted zone] + ACM management, S3 access limited to `stuff-inventory-*` buckets) — local CLI profile name `stuff-inventory`
+- **Redeploying the API**: `./deploy/deploy-api.sh` — packages `server/src` with production `node_modules` and updates the Lambda function code directly.
 - **Redeploying the frontend**: `./deploy/deploy-frontend.sh` — builds and syncs to S3 with per-file `Cache-Control` (long-lived + immutable for hashed JS/CSS, `no-cache` for `index.html`), so changes show up through CloudFront within seconds with no manual invalidation step needed.
-- **Shutting down / bringing back up**: only the Elastic Beanstalk instance costs anything meaningful (~$7–8/mo running 24/7) — see [deploy/README.md](deploy/README.md) for the exact commands to terminate it when not in use and bring it back later.
+- **No shutdown/bring-up needed**: unlike the old Elastic Beanstalk setup, Lambda and API Gateway both scale to zero automatically with no idle cost — nothing to remember to pause between uses.
 
-Prod is a separate, not-yet-started environment — see TASKS.md for the plan (serverless compute, Atlas IAM auth, Secrets Manager).
+Prod is a separate, not-yet-started environment — see TASKS.md for the plan (Atlas IAM auth, Secrets Manager, a separate Atlas cluster/project).
 
 ## Getting Started
 

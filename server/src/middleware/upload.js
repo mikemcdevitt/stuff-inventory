@@ -22,9 +22,12 @@ if (bucket) {
   });
 }
 
+// API Gateway's Lambda proxy integration caps the whole request body at 6MB,
+// and it arrives base64-encoded (~33% larger) — 4MB of actual file content
+// keeps real-world multipart requests safely under that regardless of transport.
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 4 * 1024 * 1024 },
 });
 
 module.exports = upload;

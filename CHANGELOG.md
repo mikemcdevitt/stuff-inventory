@@ -2,6 +2,20 @@
 
 Notable changes to Stuff Inventory. Not tied to version numbers (no releases yet) — grouped by date instead. See [TASKS.md](TASKS.md) for what's in progress or planned.
 
+## 2026-09-29
+
+### Changed
+- **Migrated the dev API from Elastic Beanstalk to Lambda + API Gateway**, eliminating the always-on EC2 instance (~$7–8/mo) in favor of true scale-to-zero compute. The Express app is unchanged except for a new entry point (`server/src/lambda.js`) that wraps it with `serverless-http` and caches the MongoDB connection across warm Lambda invocations instead of reconnecting per request.
+- CloudFront's `/api/*` origin repointed from the EB CNAME to the new API Gateway HTTP API (`https-only`, since API Gateway has no plain-HTTP option — EB's origin was `http-only`).
+- Max attachment upload size dropped from 20MB to 4MB. API Gateway's Lambda proxy integration hard-caps request bodies at 6MB, delivered base64-encoded (~33% larger than the raw bytes), so 4MB of real file content is the safe ceiling until uploads move to direct-to-S3 presigned URLs (tracked in TASKS.md).
+- New IAM role `stuff-inventory-dev-lambda-role`, purpose-named this time (unlike the shared, generically-named `aws-elasticbeanstalk-ec2-role` it replaces) — scoped to CloudWatch Logs plus S3 access on just the uploads bucket.
+
+### Removed
+- The Elastic Beanstalk environment, application, and their IAM roles/deploy tooling (`deploy/eb-options.json` and its template) — fully decommissioned after the new stack was verified end-to-end. `deploy/README.md`'s old "terminate between uses to save cost" runbook no longer applies to anything; Lambda and API Gateway have no idle cost to begin with.
+
+### Verified
+- Full stack tested end-to-end after the cutover: API Gateway → Lambda → Atlas directly (bypassing CloudFront), then through CloudFront, then through the custom domain — health check, unauthenticated 401, authenticated create/list/delete, and an S3-backed attachment upload/fetch all confirmed working before the EB environment was torn down.
+
 ## 2026-09-14
 
 ### Added
