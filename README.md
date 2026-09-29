@@ -1,5 +1,11 @@
 # Stuff Inventory
 
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=flat&logo=express&logoColor=white)
+![Angular](https://img.shields.io/badge/Angular-DD0031?style=flat&logo=angular&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat&logo=amazonaws&logoColor=white)
+
 A MEAN-stack app for tracking the physical stuff you own, organized by where it lives. Instead of digging through drawers or the garage to find a model number, you look it up: which location has it, what the make/model/serial number is, and (eventually) where the manual or replacement parts are.
 
 ## Problem
